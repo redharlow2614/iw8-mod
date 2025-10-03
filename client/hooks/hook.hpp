@@ -15,6 +15,26 @@ namespace Client {
 			Memory::IAT* m_SetUnhandledExceptionFilterHK;
 
 			// other IAT hooks - these can be called in DllMain for example (that's early!), nothing checks them
+			using HK_AddVectoredExceptionHandler = HookPlate::StdcallHook<"kernel32/AddVectoredExceptionHandler", PVOID,
+				ULONG, PVECTORED_EXCEPTION_HANDLER>;
+			Memory::IAT* m_AddVectoredExceptionHandlerHK;
+
+			using HK_CreateFileA = HookPlate::StdcallHook<"kernel32/CreateFileA", HANDLE,
+				LPCSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE>;
+			Memory::IAT* m_CreateFileAHK;
+
+			using HK_CheckRemoteDebuggerPresent = HookPlate::StdcallHook<"kernelbase/CheckRemoteDebuggerPresent", BOOL,
+				HANDLE, PBOOL>;
+			Memory::MinHook<>* m_CheckRemoteDebuggerPresentHK;
+
+			using HK_SetThreadContext = HookPlate::StdcallHook<"kernelbase/SetThreadContext", BOOL,
+				HANDLE, const CONTEXT*>;
+			Memory::MinHook<>* m_SetThreadContextHK;
+
+			using HK_LoadImageA = HookPlate::StdcallHook<"user32/LoadImageA", HANDLE,
+				HINSTANCE, LPCSTR, UINT, int, int, UINT>;
+			Memory::IAT* m_LoadImageAHK;
+
 			using HK_CloseSocket = HookPlate::StdcallHook<"ws2_32/closesocket", int,
 				SOCKET>;
 			Memory::IAT* m_CloseSocketHK;
@@ -71,20 +91,34 @@ namespace Client {
 			HookPlate::LuaHookStore m_LuaHookStore{};
 			using HK_LuaShared_LuaCall_IsDemoBuild = HookPlate::LuaHook<"LuaShared_LuaCall_IsDemoBuild", "Engine.BGAAHHAGAC">;
 			using HK_LUI_CoD_LuaCall_ActivateInitialClient = HookPlate::LuaHook<"LUI_CoD_LuaCall_ActivateInitialClient", "Engine.CDGCBCBAJ">;
+			using HK_LUI_CoD_LuaCall_CRMGetMessageContent = HookPlate::LuaHook<"LUI_CoD_LuaCall_CRMGetMessageContent", "Engine.CEGFGEGBEH">;
 			using HK_LUI_CoD_LuaCall_IsBattleNetAuthReady = HookPlate::LuaHook<"LUI_CoD_LuaCall_IsBattleNetAuthReady", "Engine.JBIHDJBH">;
 			using HK_LUI_CoD_LuaCall_IsBattleNetLanOnly = HookPlate::LuaHook<"LUI_CoD_LuaCall_IsBattleNetLanOnly", "Engine.BJGAADIDFH">;
 			using HK_LUI_CoD_LuaCall_IsConnectedToGameServer = HookPlate::LuaHook<"LUI_CoD_LuaCall_IsConnectedToGameServer", "Engine.DHEJECBEE">;
 			using HK_LUI_CoD_LuaCall_IsGameModeAllowed = HookPlate::LuaHook<"LUI_CoD_LuaCall_IsGameModeAllowed", "Engine.CEGDBDIIIE">;
-			using HK_LUI_CoD_LuaCall_IsNetworkConnected = HookPlate::LuaHook<"LUI_CoD_LuaCall_IsNetworkConnected", "Engine.BACCCIHGDG">;
+			using HK_LUI_CoD_LuaCall_IsGameModeAvailable = HookPlate::LuaHook<"LUI_CoD_LuaCall_IsGameModeAvailable", "Engine.DBEGJIECGB">;
 			using HK_LUI_CoD_LuaCall_IsPremiumPlayer = HookPlate::LuaHook<"LUI_CoD_LuaCall_IsPremiumPlayer", "Engine.CFHBIHABCB">;
 			using HK_LUI_CoD_LuaCall_IsPremiumPlayerReady = HookPlate::LuaHook<"LUI_CoD_LuaCall_IsPremiumPlayerReady", "Engine.ECFHDAEIDA">;
 			using HK_LUI_CoD_LuaCall_NotifyServer = HookPlate::LuaHook<"LUI_CoD_LuaCall_NotifyServer", "Engine.EBHIFJCGBH">;
+			using HK_LUI_CoD_LuaCall_OfflineDataFetched = HookPlate::LuaHook<"LUI_CoD_LuaCall_OfflineDataFetched", "Fences.BGCHCGICDB">;
 			using HK_LUI_CoD_LuaCall_ShouldShowDebugInfo = HookPlate::LuaHook<"LUI_CoD_LuaCall_ShouldShowDebugInfo", "Debug.CHFBFDCHBA">;
 
 			// Game
+			using HK_CL_GetLocalClientSignInState = HookPlate::FastcallHook<"CL_GetLocalClientSignInState", int,
+				int>;
+			Memory::MinHook<Game::Functions::CL_GetLocalClientSignInStateT>* m_CL_GetLocalClientSignInStateHK;
+
+			using HK_Com_PrintMessageInternal = HookPlate::FastcallHook<"Com_PrintMessageInternal", void,
+				const int, const char*, char>;
+			Memory::MinHook<Game::Functions::Com_PrintMessageInternalT>* m_Com_PrintMessageInternalHK;
+
 			using HK_Content_DoWeHaveContentPack = HookPlate::FastcallHook<"Content_DoWeHaveContentPack", bool,
 				int>;
 			Memory::MinHook<Game::Functions::Content_DoWeHaveContentPackT>* m_Content_DoWeHaveContentPackHK;
+
+			using HK_DB_FindXAssetHeader = HookPlate::FastcallHook<"DB_FindXAssetHeader", IW8::XAssetHeader,
+				IW8::XAssetType, const char*, int>;
+			Memory::MinHook<Game::Functions::DB_FindXAssetHeaderT>* m_DB_FindXAssetHeaderHK;
 
 			using HK_DB_LoadXFile = HookPlate::FastcallHook<"DB_LoadXFile", int,
 				const char*, uintptr_t, uintptr_t, int, bool, int, uintptr_t>;
@@ -94,16 +128,23 @@ namespace Client {
 				const char*, bool, std::uint32_t, const char*>;
 			Memory::MinHook<Game::Functions::Dvar_RegisterBoolT>* m_Dvar_RegisterBoolHK;
 
-			using HK_dwGetLogOnStatus = HookPlate::FastcallHook<"dwGetLogOnStatus", std::int64_t,
+			using HK_dwGetLogOnStatus = HookPlate::FastcallHook<"dwGetLogOnStatus", IW8::DWOnlineStatus,
 				int>;
 			Memory::MinHook<Game::Functions::dwGetLogOnStatusT>* m_dwGetLogOnStatusHK;
 
-			using HK_DWServicesAccess__isReady = HookPlate::FastcallHook<"DWServicesAccess__isReady", bool,
+			using HK_DWServicesAccess__isReady = HookPlate::FastcallHook<"DWServicesAccess::isReady", bool,
 				void*, const int>;
 			Memory::MinHook<Game::Functions::DWServicesAccess__isReadyT>* m_DWServicesAccess__isReadyHK;
 
+			using HK_GamerProfile_IsProfileLoggedIn = HookPlate::FastcallHook<"GamerProfile_IsProfileLoggedIn", bool,
+				int>;
+			Memory::MinHook<Game::Functions::GamerProfile_IsProfileLoggedInT>* m_GamerProfile_IsProfileLoggedInHK;
+
 			using HK_Live_GetLocalClientName = HookPlate::FastcallHook<"Live_GetLocalClientName", const char*>;
 			Memory::MinHook<Game::Functions::Live_GetLocalClientNameT>* m_Live_GetLocalClientNameHK;
+
+			using HK_Live_IsInSystemlinkLobby = HookPlate::FastcallHook<"Live_IsInSystemlinkLobby", bool>;
+			Memory::MinHook<Game::Functions::Live_IsInSystemlinkLobbyT>* m_Live_IsInSystemlinkLobbyHK;
 
 			using HK_Live_IsUserSignedInToDemonware = HookPlate::FastcallHook<"Live_IsUserSignedInToDemonware", bool,
 				int>;
@@ -112,6 +153,10 @@ namespace Client {
 			using HK_luaL_openlib = HookPlate::FastcallHook<"luaL_openlib", void,
 				IW8::lua_State*, const char*, const IW8::luaL_Reg*, std::uint32_t>;
 			Memory::MinHook<Game::Functions::luaL_openlibT>* m_luaL_openlibHK;
+
+			using HK_MarketingCommsManager__GetMessageToDisplayCount = HookPlate::FastcallHook<"MarketingCommsManager::GetMessageToDisplayCount", std::uint64_t,
+				void*, int>;
+			Memory::MinHook<Game::Functions::MarketingCommsManager__GetMessageToDisplayCountT>* m_MarketingCommsManager__GetMessageToDisplayCountHK;
 
 			using HK_PartyHost_StartPrivateParty = HookPlate::FastcallHook<"PartyHost_StartPrivateParty", void,
 				int, int, bool, int>;
@@ -127,6 +172,24 @@ namespace Client {
 			using HK_SV_UpdateUserinfo_f = HookPlate::FastcallHook<"SV_UpdateUserinfo_f", void,
 				void*>;
 			Memory::MinHook<Game::Functions::SV_UpdateUserinfo_fT>* m_SV_UpdateUserinfo_fHK;
+
+			using HK_UI_ShowKeyboard = HookPlate::FastcallHook<"UI_ShowKeyboard", void,
+				int, const char*, const char*, int, bool, bool, bool, IW8::UI_KEYBOARD_TYPE,
+				void(__fastcall*)(IW8::LocalClientNum_t, IW8::UI_KEYBOARD_RESULT, const char*), bool, bool>;
+			Memory::MinHook<Game::Functions::UI_ShowKeyboardT>* m_UI_ShowKeyboardHK;
+
+			using HK_Unk_IsUnsupportedGPU = HookPlate::FastcallHook<"Unk_IsUnsupportedGPU", bool>;
+			Memory::MinHook<Game::Functions::Unk_IsUnsupportedGPUT>* m_Unk_IsUnsupportedGPUHK;
+
+			using HK_Unk_IsUserSignedInToBnet = HookPlate::FastcallHook<"Unk_IsUserSignedInToBnet", bool>;
+			Memory::MinHook<Game::Functions::Unk_IsUserSignedInToBnetT>* m_Unk_IsUserSignedInToBnetHK;
+
+			// DirectX 12
+			using HK_SwapChainPresent = HookPlate::FastcallHook<"SwapChain::Present", HRESULT,
+				IDXGISwapChain1*, UINT, UINT>;
+			using HK_SwapChainResizeBuffers = HookPlate::FastcallHook<"SwapChain::ResizeBuffers", HRESULT,
+				IDXGISwapChain1*, UINT, UINT, UINT, DXGI_FORMAT, UINT>;
+			Memory::MinHook<IDXGISwapChain1>* m_SwapChainHK;
 
 			explicit Hooks();
 			void PostUnpack();

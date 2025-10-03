@@ -4,9 +4,11 @@
 #include <Windows.h>
 
 #include <d3d11.h>
+#include <d3d12.h>
 #include <DbgHelp.h>
 #include <ErrorRep.h>
 #include <ExDisp.h>
+#include <intrin.h>
 #include <MsHtmHst.h>
 #include <MsHTML.h>
 #include <Psapi.h>
@@ -25,10 +27,16 @@
 #include <mutex>
 #include <ostream>
 #include <queue>
+#include <random>
+#include <ranges>
 #include <regex>
 #include <string>
 #include <thread>
 #include <vector>
+
+#include <dxgi1_6.h>
+
+#pragma intrinsic(_ReturnAddress)
 
 #pragma comment(lib, "DbgHelp.lib")
 #pragma comment(lib, "Faultrep.lib")

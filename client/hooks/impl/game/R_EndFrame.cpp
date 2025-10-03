@@ -1,7 +1,10 @@
 #include "common.hpp"
 #include "engine/iw8/XUID.hpp"
 #include "game/game.hpp"
+#include "game/map_validator.hpp"
+#include "game/settings.hpp"
 #include "hooks/hook.hpp"
+#include "hooks/util/hook_util.hpp"
 #include "memory/memory.hpp"
 
 bool s_PatchedAuth = false;
@@ -13,9 +16,11 @@ void Client::Hook::Hooks::HK_R_EndFrame::hkCallback() {
 
 	if (g_Pointers->m_sharedUiInfo_assets) {
 		IW8::GfxFont* font = g_Pointers->m_sharedUiInfo_assets->m_SubtitleFont;
-		IW8::vec4_t color = { .666f, .666f, .666f, .666f };
-		g_Pointers->R_AddCmdDrawText(watermarkText.c_str(),
-			0x7FFFFFFF, font, font->m_PixelHeight, 4.f, 4.f + static_cast<float>(font->m_PixelHeight), 1.f, 1.f, 0.f, &color);
+		if (font) {
+			IW8::vec4_t color = { .666f, .666f, .666f, .666f };
+			g_Pointers->R_AddCmdDrawText(watermarkText.c_str(),
+				0x7FFFFFFF, font, font->m_PixelHeight, 4.f, 4.f + static_cast<float>(font->m_PixelHeight), 1.f, 1.f, 0.f, &color);
+		}
 	}
 
 	if (!s_PatchedAuth) {
@@ -38,11 +43,11 @@ void Client::Hook::Hooks::HK_R_EndFrame::hkCallback() {
 				*g_Pointers->m_Unk_XUIDCheck2 = xuidMagic | xuidId;
 			}
 
-			(*g_Pointers->m_s_presenceData)[0].m_Current.m_CrossTitlePresenceData.m_PlatformID = xuidMagic | xuidId / 6;
-
-			if (g_Pointers->m_Unk_AuthCheck1 != nullptr) {
-				*g_Pointers->m_Unk_AuthCheck1 = 1;
+			if (g_Pointers->m_s_presenceData != nullptr) {
+				(*g_Pointers->m_s_presenceData)[0].m_Current.m_CrossTitlePresenceData.m_PlatformID = xuidMagic | xuidId / 6;
 			}
+
+			*g_Pointers->m_s_isContentEnumerationFinished = true;
 			g_Pointers->m_Unk_BNetClass->m_State = 2;
 			g_Pointers->m_Unk_BNetClass->m_FinishedAuth = true;
 
@@ -68,20 +73,49 @@ void Client::Hook::Hooks::HK_R_EndFrame::hkCallback() {
 				*/
 			}
 
-			//utils::hook::set(0x14E5C0730_g, 2);
-			if (g_Pointers->m_Unk_AuthCheck2 != nullptr) {
-				*g_Pointers->m_Unk_AuthCheck2 = 2;
-			}
+			//Hook::Util::g_ForceSignInState = true;
 			g_Pointers->m_Unk_BNetClass->m_Var3 = 0x795230F0;
 			g_Pointers->m_Unk_BNetClass->m_Var4 = 0x1F;
 			g_Pointers->m_Unk_BNetClass->m_Var5 = 0x00000000;
 
 			LOG("Game/R_EndFrame", INFO, "Patched auth.");
+			Settings::Load();
+			Hook::Util::InitialiseCRM();
 			s_PatchedAuth = true;
 		}
 		else {
 			s_FramesPassed++;
 		}
 	}
+
+	if (Hook::Util::g_GameThreadQueue.size() > 0) {
+		for (auto func : Hook::Util::g_GameThreadQueue) {
+			func();
+		}
+		Hook::Util::g_GameThreadQueue.clear();
+	}
+
+	if (g_GameIdentifier.m_Ship && g_Pointers->m_Live_IsInSystemlinkLobby) {
+		IW8::dvar_t* systemlink = g_Pointers->m_Dvar_FindVarByName("LPSPMQSNPQ");
+		std::uintptr_t funcAddr = reinterpret_cast<std::uintptr_t>(g_Pointers->m_Live_IsInSystemlinkLobby);
+
+		static bool wasSystemlink = false;
+		bool isSystemlink = systemlink && systemlink->m_Current.m_Enabled;
+
+		if (isSystemlink) {
+			*reinterpret_cast<char*>(funcAddr + 0) = '\xB0';
+			*reinterpret_cast<char*>(funcAddr + 1) = '\x01';
+		}
+		else {
+			*reinterpret_cast<char*>(funcAddr + 0) = '\x32';
+			*reinterpret_cast<char*>(funcAddr + 1) = '\xC0';
+		}
+
+		if (wasSystemlink != isSystemlink) {
+			LOG("Game/R_EndFrame", DEBUG, "systemlink = {}", isSystemlink ? "yes" : "no");
+			wasSystemlink = isSystemlink;
+		}
+	}
+
 	return m_Original();
 }

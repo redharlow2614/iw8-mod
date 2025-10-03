@@ -7,80 +7,19 @@ namespace Client {
 	namespace Game {
 		class Pointers {
 		public:
-			class SignatureCalculator {
-			public:
-				using Res = Memory::ScannedResult<void>;
-
-				SignatureCalculator(const std::string& signature, std::function<Res(Res)> mod)
-					: m_Signature(signature)
-					, m_Mod(std::move(mod))
-				{}
-
-				SignatureCalculator(const std::string& signature)
-					: SignatureCalculator(signature, [](Res r) { return r; })
-				{}
-
-				std::string m_Signature;
-				std::function<Res(Res)> m_Mod;
-			};
-
-			class PointerCalculator {
-			public:
-				PointerCalculator(std::vector<GameVersion> targetVersions, SignatureCalculator calculator, std::string name, void** pointer)
-					: m_TargetVersions(targetVersions)
-					, m_Calculator(calculator)
-					, m_Name(name)
-					, m_Pointer(pointer)
-				{}
-
-				PointerCalculator(SignatureCalculator calculator, std::string name, void** pointer)
-					: PointerCalculator({}, calculator, name, pointer)
-				{}
-
-				bool TargetsVersion(GameVersion version) {
-					if (this->m_TargetVersions.empty()) {
-						return true;
-					}
-
-					for (const auto& targetVersion : this->m_TargetVersions) {
-						if (targetVersion == version) {
-							return true;
-						}
-					}
-
-					return false;
-				}
-
-				std::vector<GameVersion> m_TargetVersions;
-				SignatureCalculator m_Calculator;
-				std::string m_Name;
-				void** m_Pointer;
-			};
-
-			class PointerList {
-			public:
-				PointerList(std::string _module, std::vector<PointerCalculator> pointers) {
-					this->m_Module = _module;
-					this->m_Pointers = pointers;
-				}
-
-				std::string m_Module{};
-				std::vector<PointerCalculator> m_Pointers{};
-
-				void Apply();
-			};
-
 			explicit Pointers();
-			PointerList GetPointerList();
 
 			Functions::AddBaseDrawTextCmdT* m_AddBaseDrawTextCmd{};
 			Functions::CG_WorldPosToScreenPosRealT* m_CG_WorldPosToScreenPosReal{};
+			Functions::CL_GetLocalClientSignInStateT* m_CL_GetLocalClientSignInState{};
 			Functions::CL_PlayerData_GetDDLBufferT* m_CL_PlayerData_GetDDLBuffer{};
 			Functions::Com_GameInfo_GetGameTypeForInternalNameT* m_Com_GameInfo_GetGameTypeForInternalName{};
 			Functions::Com_GameInfo_GetMapInfoForLoadNameT* m_Com_GameInfo_GetMapInfoForLoadName{};
 			Functions::Com_ParseNavStringsT* m_Com_ParseNavStrings{};
+			Functions::Com_PrintMessageInternalT* m_Com_PrintMessageInternal{};
 			Functions::Com_SetErrorMessageT* m_Com_SetErrorMessage{};
 			Functions::Content_DoWeHaveContentPackT* m_Content_DoWeHaveContentPack{};
+			Functions::DB_FindXAssetHeaderT* m_DB_FindXAssetHeader{};
 			Functions::DB_LoadXFileT* m_DB_LoadXFile{};
 			Functions::DB_Zones_PerformZoneLoadT* m_DB_Zones_PerformZoneLoad{};
 			Functions::DDL_GetEnumT* m_DDL_GetEnum{};
@@ -98,6 +37,8 @@ namespace Client {
 			Functions::dwGetLogOnStatusT* m_dwGetLogOnStatus{};
 			Functions::DWServicesAccess__isReadyT* m_DWServicesAccess__isReady{};
 			Functions::FS_ReadFileT* m_FS_ReadFile{};
+			Functions::GamerProfile_IsProfileLoggedInT* m_GamerProfile_IsProfileLoggedIn{};
+			Functions::GamerProfile_GetDataByNameT* m_GamerProfile_GetDataByName{};
 			Functions::GamerProfile_SetDataByNameT* m_GamerProfile_SetDataByName{};
 			Functions::I_atoui64T* m_I_atoui64{};
 			Functions::I_atoui64_hexT* m_I_atoui64_hex{};
@@ -105,19 +46,28 @@ namespace Client {
 			Functions::Info_ValueForKeyT* m_Info_ValueForKey{};
 			Functions::j_vaT* m_j_va{};
 			Functions::Live_GetLocalClientNameT* m_Live_GetLocalClientName{};
+			Functions::Live_IsInSystemlinkLobbyT* m_Live_IsInSystemlinkLobby{};
 			Functions::Live_IsUserSignedInToDemonwareT* m_Live_IsUserSignedInToDemonware{};
+			Functions::LiveStorage_AreStatsFetchedT* m_LiveStorage_AreStatsFetched{};
+			Functions::LiveStorage_ReadStatsT* m_LiveStorage_ReadStats{};
+			Functions::lua_createtableT* m_lua_createtable{};
 			Functions::lua_getfieldT* m_lua_getfield{};
 			Functions::lua_pushbooleanT* m_lua_pushboolean{};
+			Functions::lua_pushnilT* m_lua_pushnil{};
 			Functions::lua_pushstringT* m_lua_pushstring{};
 			Functions::lua_removeT* m_lua_remove{};
 			Functions::lua_tobooleanT* m_lua_toboolean{};
 			Functions::lua_tointeger32T* m_lua_tointeger32{};
 			Functions::lua_tolstringT* m_lua_tolstring{};
+			Functions::lua_tonumber32T* m_lua_tonumber32{};
 			Functions::luaL_openlibT* m_luaL_openlib{};
 			Functions::LuaShared_PCallT* m_LuaShared_PCall{};
+			Functions::LuaShared_SetTableIntT* m_LuaShared_SetTableInt{};
+			Functions::LuaShared_SetTableStringT* m_LuaShared_SetTableString{};
 			Functions::LUI_BeginTableT* m_LUI_BeginTable{};
 			Functions::LUI_EndTableT* m_LUI_EndTable{};
 			Functions::LUI_OpenMenuT* m_LUI_OpenMenu{};
+			Functions::MarketingCommsManager__GetMessageToDisplayCountT* m_MarketingCommsManager__GetMessageToDisplayCount{};
 			Functions::MSG_ReadInt64T* m_MSG_ReadInt64{};
 			Functions::MSG_WriteInt64T* m_MSG_WriteInt64{};
 			Functions::PartyHost_StartPrivatePartyT* m_PartyHost_StartPrivateParty{};
@@ -128,17 +78,25 @@ namespace Client {
 			Functions::SV_Cmd_ArgvT* m_SV_Cmd_Argv{};
 			Functions::SV_UpdateUserinfo_fT* m_SV_UpdateUserinfo_f{};
 			Functions::Sys_MicrosecondsT* m_Sys_Microseconds{};
+			Functions::UI_ShowKeyboardT* m_UI_ShowKeyboard{};
+			Functions::Unk_IsUnsupportedGPUT* m_Unk_IsUnsupportedGPU{};
+			Functions::Unk_IsUserSignedInToBnetT* m_Unk_IsUserSignedInToBnet{};
 
 			IW8::clientUIActive_t* m_clientUIActives{};
 			IW8::CmdArgs* m_cmd_args{};
 			IW8::gentity_s** m_g_entities{};
 			std::uint32_t* m_holdrand{};
 			IW8::lua_State** m_LUI_luaVM{};
+			IW8::LUIMethod** m_LUIMethod_LUIGlobalPackage_list{};
+			IW8::GamerProfileDataField* m_PROFILE_DATA_FIELDS{};
+			IW8::cmd_function_s** m_s_cmd_functions{};
+			bool* m_s_isContentEnumerationFinished{};
 			bool* m_s_luaInFrontend{};
 			IW8::LocalUserPresenceData(*m_s_presenceData)[8] {};
 			IW8::CachedAssets_t* m_sharedUiInfo_assets{};
-			int* m_Unk_AuthCheck1{};
-			int* m_Unk_AuthCheck2{};
+			ID3D12CommandQueue** m_Unk_D3D12_CommandQueue{};
+			IDXGISwapChain1** m_Unk_D3D12_SwapChain{};
+			int* m_Unk_SignInState{};
 			std::uint64_t* m_Unk_XUIDCheck1{};
 			std::uint64_t* m_Unk_XUIDCheck2{};
 			IW8::BNetClass* m_Unk_BNetClass{};

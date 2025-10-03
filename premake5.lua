@@ -157,19 +157,22 @@ project "client"
 	location "client"
 	kind "SharedLib"
 	language "C++"
-	targetname "discord_game_sdk"
+	targetname "XInput9_1_0"
 
 	files {
 		"client/**.hpp",
 		"client/**.cpp",
 		"client/**.h",
-		"client/**.c"
+		"client/**.c",
+		"client/**.rc",
+		"client/resources/**.*"
 	}
 	vpaths {
 		["*"] = {}
 	}
 	links {
 		"backward-cpp",
+		"curl",
 		"common",
 		"discord-rpc",
 		"imgui",
@@ -180,6 +183,7 @@ project "client"
 		"common/",
 		"vendor/asmjit/src/",
 		"vendor/backward-cpp/",
+		"vendor/curl/include/",
 		"vendor/discord-rpc/",
 		"vendor/gsl/include/",
 		"vendor/imgui/",
@@ -187,7 +191,15 @@ project "client"
 		"vendor/minhook/include/"
 	}
 	defines {
-		"NOMINMAX"
+		"_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR",
+		"NOMINMAX",
+		"CURL_STRICTER",
+		"CURL_STATICLIB",
+		"CURL_DISABLE_LDAP",
+		"USE_SCHANNEL",
+		"USE_WINDOWS_SSPI",
+		"USE_THREADS_WIN32",
+		"BUILDING_LIBCURL"
 	}
 	prebuildcommands {
 		"cd .. && .\\tools\\premake\\premake5.exe generate-buildinfo"
@@ -227,6 +239,7 @@ project "common"
 		"vendor/minhook/include/"
 	}
 	defines {
+		"_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR",
 		"NOMINMAX"
 	}
 	prebuildcommands {
@@ -240,53 +253,6 @@ project "common"
 	targetdir(buildDir)
 	objdir(intBuildDir)
 
---[[
-project "launcher"
-	location "launcher"
-	kind "ConsoleApp"
-	language "C++"
-	targetname "iw8-mod"
-
-	files {
-		"launcher/**.hpp",
-		"launcher/**.cpp",
-		"launcher/resource.h",
-		"launcher/resource.rc",
-		"launcher/resources/**.*"
-	}
-	vpaths {
-		["*"] = {}
-	}
-	links {
-		"backward-cpp",
-		"common",
-		"imgui",
-		"minhook"
-	}
-	dependson {
-		"client"
-	}
-	includedirs {
-		"launcher/",
-		"common/",
-		"vendor/asmjit/src/",
-		"vendor/backward-cpp/",
-		"vendor/gsl/include/",
-		"vendor/imgui/",
-		"vendor/json/single_include/",
-		"vendor/minhook/include/"
-	}
-	defines {
-		"NOMINMAX"
-	}
-	prebuildcommands {
-		"cd .. && .\\tools\\premake\\premake5.exe generate-buildinfo"
-	}
-	
-	targetdir(buildDir)
-	objdir(intBuildDir)
-]]--
-
 group "vendor"
 	-- vendor
 	project "backward-cpp"
@@ -294,12 +260,58 @@ group "vendor"
 		kind "StaticLib"
 		language "C++"
 
-		files { "vendor/%{prj.name}/backward.hpp", "vendor/%{prj.name}/backward.cpp" }
-		vpaths { ["*"] = {} }
-		includedirs { "vendor/%{prj.name}/" }
-		defines { "NOMINMAX" }
+		files {
+			"vendor/%{prj.name}/backward.hpp",
+			"vendor/%{prj.name}/backward.cpp"
+		}
+		vpaths {
+			["*"] = {}
+		}
+		includedirs {
+			"vendor/%{prj.name}/"
+		}
+		defines {
+			"_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR",
+			"NOMINMAX"
+		}
 		disablewarnings {
 			"4996"	-- C4996: This function or variable may be unsafe. Consider using [...] instead.
+		}
+
+		targetdir(buildDir)
+		objdir(intBuildDir)
+	project "curl"
+		location "vendor/%{prj.name}"
+		kind "StaticLib"
+		language "C"
+
+		files {
+			"vendor/%{prj.name}/include/**.h",
+			"vendor/%{prj.name}/lib/**.h",
+			"vendor/%{prj.name}/lib/**.c"
+		}
+		vpaths {
+			["*"] = {}
+		}
+		links {
+			"Crypt32.lib"
+		}
+		includedirs {
+			"vendor/%{prj.name}/include/",
+			"vendor/%{prj.name}/lib/"
+		}
+		defines {
+			"_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR",
+			"CURL_STRICTER",
+			"CURL_STATICLIB",
+			"CURL_DISABLE_LDAP",
+			"USE_SCHANNEL",
+			"USE_WINDOWS_SSPI",
+			"USE_THREADS_WIN32",
+			"BUILDING_LIBCURL"
+		}
+		disablewarnings {
+			"4005"	-- C4005: macro redefinition
 		}
 
 		targetdir(buildDir)
@@ -313,9 +325,14 @@ group "vendor"
 			"vendor/%{prj.name}/**.h",
 			"vendor/%{prj.name}/**.cpp"
 		}
-		vpaths { ["*"] = {} }
+		vpaths {
+			["*"] = {}
+		}
 		includedirs {
 			"vendor/%{prj.name}/"
+		}
+		defines {
+			"_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR"
 		}
 		disablewarnings {
 			"4996",	-- C4996: This function or variable may be unsafe. Consider using [...] instead.
@@ -332,13 +349,20 @@ group "vendor"
 		files {
 			"vendor/%{prj.name}/*.h",
 			"vendor/%{prj.name}/*.cpp",
-			"vendor/%{prj.name}/backends/imgui_impl_dx11.h",
-			"vendor/%{prj.name}/backends/imgui_impl_dx11.cpp",
+			"vendor/%{prj.name}/backends/imgui_impl_dx12.h",
+			"vendor/%{prj.name}/backends/imgui_impl_dx12.cpp",
 			"vendor/%{prj.name}/backends/imgui_impl_win32.h",
 			"vendor/%{prj.name}/backends/imgui_impl_win32.cpp"
 		}
-		vpaths { ["*"] = {} }
-		includedirs { "vendor/%{prj.name}/" }
+		vpaths {
+			["*"] = {}
+		}
+		includedirs {
+			"vendor/%{prj.name}/"
+		}
+		defines {
+			"_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR"
+		}
 
 		targetdir(buildDir)
 		objdir(intBuildDir)
@@ -351,9 +375,14 @@ group "vendor"
 			"vendor/%{prj.name}/src/**.h",
 			"vendor/%{prj.name}/src/**.cpp"
 		}
-		vpaths { ["*"] = {} }
-		includedirs { "vendor/%{prj.name}/src/" }
+		vpaths {
+			["*"] = {}
+		}
+		includedirs {
+			"vendor/%{prj.name}/src/"
+		}
 		defines {
+			"_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR",
 			"ASMJIT_STATIC"
 		}
 		disablewarnings {
@@ -367,9 +396,15 @@ group "vendor"
 		kind "StaticLib"
 		language "C++"
 
-		files { "vendor/%{prj.name}/single_include/**.hpp" }
-		vpaths { ["*"] = {} }
-		includedirs { "vendor/%{prj.name}/single_include/" }
+		files {
+			"vendor/%{prj.name}/single_include/**.hpp"
+		}
+		vpaths {
+			["*"] = {}
+		}
+		includedirs {
+			"vendor/%{prj.name}/single_include/"
+		}
 
 		targetdir(buildDir)
 		objdir(intBuildDir)
@@ -383,10 +418,15 @@ group "vendor"
 			"vendor/%{prj.name}/src/**.h",
 			"vendor/%{prj.name}/src/**.c"
 		}
-		vpaths { ["*"] = {} }
+		vpaths {
+			["*"] = {}
+		}
 		includedirs {
 			"vendor/%{prj.name}/include/",
 			"vendor/%{prj.name}/src/"
+		}
+		defines {
+			"_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR"
 		}
 		disablewarnings {
 			"4100",	-- C4100: '[...]': unreferenced formal parameter

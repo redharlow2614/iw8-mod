@@ -22,10 +22,8 @@ NOTE: You must legally own [Call of Duty®: Modern Warfare](https://store.steamp
   > git clone https://gitlab.com/xifil/iw8-mod.git --recurse-submodules
   > ```
   > depending on what Git you would like to use, however you always need the `--recurse-submodules` flag.
-- Update the submodules and run `premake5 vs2019` or simply use the delivered `generate.bat`.
-- Build via solution file in `iw8_vs2019.sln`.
-
-> Currently `vs2022` isn't a valid configuration as any mutex will fail to lock and cause an access violation, if you think you can figure this out you are literally insane, I've tried and failed and nothing I do fixes this.
+- Update the submodules and run `premake5 vs2022` or simply use the delivered `generate.bat`.
+- Build via solution file in `iw8_vs2022.sln`.
 
 <!--
 ### Premake arguments
@@ -36,6 +34,12 @@ NOTE: You must legally own [Call of Duty®: Modern Warfare](https://store.steamp
 | `--dev-build`               | Enable development builds of the client. |
 
 <br/>-->
+
+## Download from Actions
+
+GitHub Actions automatically builds the DLL file on each 
+commit, you can find the latest build of iw8-mod 
+[here](https://xifil.github.io/iw8-redirect).
 
 ## Disclaimer
 
@@ -65,7 +69,7 @@ Support may be coming for:
 
 Keep in mind that only 1.20/replay fully works "online" right now, all other versions don't get past the main menu and crash after ~2 minutes due to anti-tampering mechanisms put in place by Infinity Ward.
 
-The same `discord_game_sdk.dll` can be used for all the versions as it auto-detects the version based on the executable and calculates the signatures based on that.
+The same `XInput9_1_0.dll` can be used for all the versions as it auto-detects the version based on the executable and calculates the signatures based on that.
 
 ## Credits
 
@@ -73,4 +77,5 @@ The same `discord_game_sdk.dll` can be used for all the versions as it auto-dete
 - [Donetsk](https://github.com/ProjectDonetsk/Donetsk) - documented code used throughout the project
 - [mrondllsrc](https://github.com/Ma3axucTKa/mrondllsrc) - a few hooks and patches
 - [s1x-client](https://github.com/HeartbeatingForCenturies/s1x-client) - heavy inspiration
-
+- [Alesky.](https://discord.com/users/266189430446882816) - art inspiration, the goat
+- [N1gh7m4r3](https://discord.com/users/1279980341863514134) - logical ideas, provided many useful resources
